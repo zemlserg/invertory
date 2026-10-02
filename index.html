@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учет АСУ ТП МЦ</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f8fafc; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        h2 { color: #1e293b; text-align: center; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        label { display: block; font-weight: 600; margin-top: 12px; color: #475569; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        button:hover { background-color: #1d4ed8; }
+        .hidden { display: none !important; }
+        .status-msg { text-align: center; font-weight: 600; margin-top: 10px; font-size: 14px; }
+        .success { color: #16a34a; }
+        .error { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+    <h2>Учет цехового оборудования </h2>
+
+    <!-- БЛОК 1: ПОИСК ОБОРУДОВАНИЯ -->
+    <div class="card" id="search-block">
+        <h3>Поиск техники</h3>
+        <input type="text" id="test-id-input" placeholder="Вставьте UUID">
+        <button type="button" id="test-btn" style="background-color: #10b981;">Проверить запись</button>
+    </div>
+
+    <!-- БЛОК 2: ДОБАВЛЕНИЕ НОВОЙ ТЕХНИКИ -->
+    <div class="card" id="add-block">
+        <h3>➕ Добавить новую технику</h3>
+        <label>Название техники:</label>
+        <input type="text" id="new-name" placeholder="Например: Монитор Dell">
+        <label>Серийный номер:</label>
+        <input type="text" id="new-sn" placeholder="Например: SN-777">
+        <label>Локация:</label>
+        <input type="text" id="new-location" placeholder="Например: Кабинет 10">
+        <label>Статус:</label>
+        <select id="new-status">
+            <option value="На складе">На складе</option>
+            <option value="В работе">В работе</option>
+        </select>
+        <button type="button" id="create-btn" style="background-color: #2563eb;">Создать в базе Amvera</button>
+        <div id="add-message" class="status-msg"></div>
+    </div>
+
+    <!-- БЛОК 3: КАРТОЧКА РЕДАКТИРОВАНИЯ (ОТКРЫВАЕТСЯ ПРИ ПОИСКЕ) -->
+    <div class="card hidden" id="result-block">
+        <h3>ℹ️ Информация и Изменение статуса</h3>
+        <label>Название:</label>
+        <input type="text" id="eq-name" readonly style="background-color: #f1f5f9;">
+        <label>Серийный номер:</label>
+        <input type="text" id="eq-sn" readonly style="background-color: #f1f5f9;">
+        <label>Текущая локация:</label>
+        <input type="text" id="eq-location">
+        <label>Статус:</label>
+        <select id="eq-status">
+            <option value="На складе">На складе</option>
+            <option value="В работе">В работе</option>
+            <option value="В ремонте">В ремонте</option>
+            <option value="Списано">Списано</option>
+        </select>
+        <button type="button" id="save-btn">Сохранить изменения</button>
+        <button type="button" id="back-btn" style="background-color: #64748b;">Назад к поиску</button>
+        <div id="message" class="status-msg"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let currentEquipmentId = null;
+
+        // 1. Автоматический перехват ID из QR-кода (Умная ссылка) при загрузке страницы
+        window.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrId = urlParams.get('id'); // Ищем в ссылке хвостик ?id=...
+
+            if (qrId) {
+                // Если телефон перешел по ссылке из QR-кода, сразу открываем карточку!
+                currentEquipmentId = qrId;
+                document.getElementById('search-block').classList.add('hidden');
+                document.getElementById('add-block').classList.add('hidden');
+                document.getElementById('result-block').classList.remove('hidden');
+                document.getElementById('message').className = "status-msg";
+                document.getElementById('message').innerText = "Загрузка данных по QR-коду...";
+
+                await loadEquipmentData(currentEquipmentId);
+            }
+        });
+
+        // 2. КНОПКА РУЧНОГО ПОИСКА (ПРОВЕРКИ UUID)
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const testId = document.getElementById('test-id-input').value.trim();
+            if (!testId) { alert('Пожалуйста, вставьте UUID!'); return; }
+
+            currentEquipmentId = testId;
+            document.getElementById('search-block').classList.add('hidden');
+            document.getElementById('add-block').classList.add('hidden');
+            document.getElementById('result-block').classList.remove('hidden');
+            document.getElementById('message').className = "status-msg";
+            document.getElementById('message').innerText = "Загрузка данных из Amvera...";
+
+            await loadEquipmentData(currentEquipmentId);
+        });
+
+        // 3. ПОДГРУЗКА ДАННЫХ С БЭКЕНДА AMVERA
+        async function loadEquipmentData(id) {
+            const msgDiv = document.getElementById('message');
+            try {
+                const response = await fetch(`${API_URL}/equipment/${id}`);
+                if (!response.ok) throw new Error('Оборудование не найдено');
+                const data = await response.json();
+                document.getElementById('eq-name').value = data.name || "—";
+                document.getElementById('eq-sn').value = data.serial_number || "—";
+                document.getElementById('eq-location').value = data.location || "";
+                document.getElementById('eq-status').value = data.status || "На складе";
+                msgDiv.innerText = "";
+            } catch (err) {
+                msgDiv.className = "status-msg error";
+                msgDiv.innerText = err.message;
+            }
+        }
+
+        // 4. КНОПКА СОХРАНЕНИЯ ИЗМЕНЕНИЙ (PATCH)
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            const status = document.getElementById('eq-status').value;
+            const location = document.getElementById('eq-location').value;
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = "status-msg";
+            msgDiv.innerText = "Сохранение...";
+
+            try {
+                const response = await fetch(`${API_URL}/equipment/${currentEquipmentId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status, location: location })
+                });
+                if (!response.ok) throw new Error('Не удалось обновить статус');
+                msgDiv.className = "status-msg success";
+                msgDiv.innerText = "Данные успешно обновлены в Amvera!";
+            } catch (err) {
+                msgDiv.className = "status-msg error";
+                msgDiv.innerText = err.message;
+            }
+        });
+
+        // 5. КНОПКА СОЗДАНИЯ НОВОЙ ТЕХНИКИ (POST)
+        document.getElementById('create-btn').addEventListener('click', async () => {
+            const name = document.getElementById('new-name').value.trim();
+            const sn = document.getElementById('new-sn').value.trim();
+            const location = document.getElementById('new-location').value.trim();
+            const status = document.getElementById('new-status').value;
+            const addMsg = document.getElementById('add-message');
+
+            if (!name || !sn) {
+                addMsg.className = "status-msg error";
+                addMsg.innerText = "Название и серийный номер обязательны!";
+                return;
+            }
+            addMsg.className = "status-msg";
+            addMsg.innerText = "Создание записи...";
+
+            try {
+                const response = await fetch(`${API_URL}/equipment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, serial_number: sn, location: location, status: status })
+                });
+                if (!response.ok) throw new Error('Ошибка при создании');
+                const item = await response.json();
+                addMsg.className = "status-msg success";
+                addMsg.innerText = `Успешно создано! UUID: ${item.id}`;
+                document.getElementById('new-name').value = "";
+                document.getElementById('new-sn').value = "";
+                document.getElementById('new-location').value = "";
+            } catch (err) {
+                addMsg.className = "status-msg error";
+                addMsg.innerText = err.message;
+            }
+        });
+
+        // 6. КНОПКА НАЗАД К ПОИСКУ
+        document.getElementById('back-btn').addEventListener('click', () => {
+            document.getElementById('result-block').classList.add('hidden');
+            document.getElementById('search-block').classList.remove('hidden');
+            document.getElementById('add-block').classList.remove('hidden');
+            document.getElementById('test-id-input').value = "";
+            document.getElementById('message').innerText = "";
+        });
+
+        // 6. КНОПКА НАЗАД К ПОИСКУ
+        document.getElementById('back-btn').addEventListener('click', () => {
+            document.getElementById('result-block').classList.add('hidden');
+            document.getElementById('search-block').classList.remove('hidden');
+            document.getElementById('add-block').classList.remove('hidden');
+            document.getElementById('test-id-input').value = "";
+            document.getElementById('message').innerText = "";
+        });
+    </script>
+</body>
+</html>

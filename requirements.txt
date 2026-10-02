@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+python-dotenv
+pydantic
+qrcode[pil]
+psycopg[binary]
+psycopg2-binary
+reportlab
