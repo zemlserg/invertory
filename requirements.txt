@@ -7,3 +7,5 @@ qrcode[pil]
 psycopg[binary]
 psycopg2-binary
 reportlab
+pyjwt
+passlib[bcrypt]
