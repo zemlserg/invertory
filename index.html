@@ -5,52 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Учет АСУ ТП МЦ</title>
     <style>
+        /* Общие стили для страницы: центрируем контент, задаем современный шрифт */
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; padding: 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
+
+        /* Главный заголовок системы учета */
         h2 { color: #1e293b; text-align: center; margin-bottom: 20px; font-size: 22px; }
+
+        /* Стили для белых карточек блоков (Авторизация, Поиск, Добавление) */
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; margin-bottom: 20px; }
+
+        /* Заголовки внутри карточек с разделительной линией */
         h3 { margin-top: 0; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-size: 16px; }
+
+        /* Текстовые метки для полей ввода */
         label { display: block; font-weight: 600; margin-top: 12px; color: #475569; font-size: 14px; }
+
+        /* Инпуты и выпадающие списки (оптимизированы под пальцы смартфона) */
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+
+        /* Основной стиль кнопок */
         button { width: 100%; padding: 12px; background-color: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 16px; margin-top: 15px; cursor: pointer; }
         button:hover { background-color: #1d4ed8; }
+
+        /* ВАЖНЫЙ КЛАСС: Скрывает любой блок с экрана (управляется через JavaScript) */
         .hidden { display: none !important; }
+
+        /* Стили для статусных сообщений (Зеленый — успех, Красный — ошибка) */
         .status-msg { text-align: center; font-weight: 600; margin-top: 10px; font-size: 14px; }
         .success { color: #16a34a; }
         .error { color: #dc2626; }
+
+        /* Верхняя плашка профиля вошедшего сотрудника */
         .user-badge { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 15px; background: #e2e8f0; padding: 8px 12px; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-weight: 600; color: #334155; }
+
+        /* Компактная кнопка «Выйти» на верхней плашке */
         .logout-btn { background: #cbd5e1; color: #1e293b; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; margin: 0; width: auto; }
         .logout-btn:hover { background: #94a3b8; color: white; }
     </style>
 </head>
 <body>
-<!-- ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ (СКРЫТА ДО ВХОДА) -->
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ (Изначально скрыта) -->
     <div id="user-panel" class="user-badge hidden">
         <div>👤 <span id="current-username">Пользователь</span> (<span id="current-role" style="color:#2563eb;">Роль</span>)</div>
         <button type="button" class="logout-btn" id="logout-btn">Выйти</button>
     </div>
 
-    <h2>Учет оборудования АСУ ТП МЦ</h2>
+    <h2>Учет оборудования АСУ ТП</h2>
 
-    <!-- ФОРМА АВТОРИЗАЦИИ (LOGIN SCREEN) -->
+    <!-- КАРТОЧКА АВТОРИЗАЦИИ (LOGIN SCREEN) - ТУТ ИСПРАВЛЕНА КАВЫЧКА ID -->
     <div class="card" id="login-block">
-        <h3>🔐 Вход в систему Enterprise</h3>
+        <h3>🔐 Вход в систему</h3>
         <label>Имя пользователя:</label>
-        <input type="text" id="login-username" placeholder="Например: engineer_ivan">
+        <input type="text" id="login-username" placeholder="Например: engineer_roman">
         <label>Пароль:</label>
         <input type="password" id="login-password" placeholder="••••••••">
         <button type="button" id="login-submit-btn" style="background-color: #2563eb;">Войти</button>
+        <!-- Сюда выводится ошибка, если пароль неверный -->
         <div id="login-message" class="status-msg"></div>
     </div>
 
-    <!-- БЛОК ПОИСКА ОБОРУДОВАНИЯ -->
+    <!-- КАРТОЧКА ПОИСКА И ПЕЧАТИ ОБОРУДОВАНИЯ (Скрыта до входа) -->
     <div class="card hidden" id="search-block">
         <h3>Поиск техники</h3>
-        <input type="text" id="test-id-input" placeholder="Вставьте UUID из DBeaver">
+        <input type="text" id="test-id-input" placeholder="Вставьте UUID">
         <button type="button" id="test-btn" style="background-color: #10b981;">Проверить запись</button>
         <button type="button" id="print-all-btn" style="background-color: #64748b; margin-top: 10px;">🖨️ Скачать PDF с наклейками</button>
     </div>
 
-    <!-- БЛОК ДОБАВЛЕНИЯ ТЕХНИКИ (ТОЛЬКО ДЛЯ ADMIN) -->
+    <!-- КАРТОЧКА ДОБАВЛЕНИЯ НОВОЙ ТЕХНИКИ (Открывается СТРОГО для роли 'admin') -->
     <div class="card hidden" id="add-block">
         <h3>➕ Добавить новую технику</h3>
         <label>Название техники:</label>
@@ -64,11 +86,11 @@
             <option value="На складе">На складе</option>
             <option value="В работе">В работе</option>
         </select>
-        <button type="button" id="create-btn" style="background-color: #2563eb;">Создать в базе Amvera</button>
+        <button type="button" id="create-btn" style="background-color: #2563eb;">Создать в базе equipment</button>
         <div id="add-message" class="status-msg"></div>
     </div>
 
-    <!-- БЛОК КАРТОЧКИ И ЛЕНТЫ ИСТОРИИ ПЕРЕМЕЩЕНИЙ -->
+    <!-- КАРТОЧКА ПРОСМОТРА ИЗМЕНЕНИЙ И ЛЕНТЫ ИСТОРИИ (Скрыта до выполнения поиска) -->
     <div class="card hidden" id="result-block">
         <h3>ℹ️ Информация и Изменение статуса</h3>
         <label>Название:</label>
@@ -86,6 +108,7 @@
         </select>
         <button type="button" id="save-btn">Сохранить изменения</button>
 
+        <!-- ЛЕНТА ЛОГОВ (ИСТОРИЯ ПЕРЕМЕЩЕНИЙ ТЕХНИКИ) -->
         <h4 style="margin-top:20px; margin-bottom:5px; color:#475569; font-size: 14px;">📋 История перемещений:</h4>
         <div id="history-container" style="background:#f1f5f9; padding:10px; border-radius:8px; max-height:120px; overflow-y:auto; font-size:13px; color:#334155; border:1px solid #e2e8f0;"></div>
 
@@ -93,32 +116,39 @@
         <div id="message" class="status-msg"></div>
     </div>
     <script>
+        // Переменная определяет домен бэкенда динамически (избавляет от ручного ввода IP)
         const API_URL = window.location.origin;
         let currentEquipmentId = null;
 
-        // Проверяем токен при открытии сайта
+        // ENTERPRISE-АВТОЛОГИН: Срабатывает мгновенно при открытии страницы/вкладки
         window.addEventListener('DOMContentLoaded', async () => {
+            // Читаем пропуск (токен) и роль сотрудника из постоянной памяти браузера телефона
             const token = localStorage.getItem('access_token');
             const role = localStorage.getItem('user_role');
             const username = localStorage.getItem('username');
 
-            if (token && role && username) {
-                showAppInterface(username, role);
+            // Проверяем, перешел ли инженер по ссылке из QR-кода (ищем ?id=... в веб-адресе)
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrId = urlParams.get('id');
 
-                // Читаем хвостик ссылки ?id=... от сканирования QR-кода
-                const urlParams = new URLSearchParams(window.location.search);
-                const qrId = urlParams.get('id');
+            // ЕСЛИ СОТРУДНИК УЖЕ ВХОДИЛ РАНЕЕ:
+            if (token && role && username) {
+                showAppInterface(username, role); // Включаем склад и ГАРАНТИРОВАННО прячем логин
+
+                // Если мы попали сюда из QR-кода — сразу переключаем экраны и качаем карточку прибора
                 if (qrId) {
                     currentEquipmentId = qrId;
                     openResultBlock();
                     await loadEquipmentData(currentEquipmentId);
                 }
             } else {
+                // ЕСЛИ ТОКЕНА НЕТ (Первый вход): Принудительно выводим на экран форму логина
                 document.getElementById('login-block').classList.remove('hidden');
+                if (qrId) { currentEquipmentId = qrId; } // Запоминаем ID, чтобы открыть его сразу ПОСЛЕ ручного входа
             }
         });
 
-        // ЛОГИКА ОТПРАВКИ ЛОГИНА И ПАРОЛЯ В FastPI
+        // ОБРАБОТЧИК НАЖАТИЯ КНОПКИ «ВОЙТИ» (Если автологин не сработал)
         document.getElementById('login-submit-btn').addEventListener('click', async () => {
             const userVal = document.getElementById('login-username').value.trim();
             const passVal = document.getElementById('login-password').value.trim();
@@ -130,6 +160,7 @@
             loginMsg.className = "status-msg"; loginMsg.innerText = "Проверка безопасности...";
 
             try {
+                // Отправляем логин/пароль на бэкенд Amvera
                 const response = await fetch(`${API_URL}/equipment/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -143,18 +174,15 @@
 
                 const data = await response.json();
 
-                // Сохраняем зашифрованные пропуска в память смартфона
+                // Сохраняем выданный токен и роль в localStorage (постоянную память)
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('user_role', data.role);
                 localStorage.setItem('username', data.username);
 
-                document.getElementById('login-block').classList.add('hidden');
+                // Запускаем переключение интерфейса склада
                 showAppInterface(data.username, data.role);
 
-                const urlParams = new URLSearchParams(window.location.search);
-                const qrId = urlParams.get('id');
-                if (qrId) {
-                    currentEquipmentId = qrId;
+                if (currentEquipmentId) {
                     openResultBlock();
                     await loadEquipmentData(currentEquipmentId);
                 }
@@ -163,22 +191,27 @@
             }
         });
 
-        // Отрисовка интерфейса на основе Enterprise ролей
+        // ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ РОЛЕЙ И СКРЫТИЯ ОКНА ВХОДА
         function showAppInterface(username, role) {
+            // Намертво прячем форму входа с полями ввода логина и пароля!
+            document.getElementById('login-block').classList.add('hidden');
+
+            // Показываем верхнюю плашку с именем авторизованного сотрудника
             document.getElementById('user-panel').classList.remove('hidden');
             document.getElementById('current-username').innerText = username;
             document.getElementById('current-role').innerText = role === 'admin' ? 'Администратор' : (role === 'engineer' ? 'Инженер' : 'Наблюдатель');
 
+            // Открываем блок ручного поиска техники
             document.getElementById('search-block').classList.remove('hidden');
 
-            // Если вошел не админ — форма создания новой техники полностью исчезает
+            // Показываем блок создания новой техники ТОЛЬКО для роли 'admin'
             if (role === 'admin') {
                 document.getElementById('add-block').classList.remove('hidden');
             } else {
                 document.getElementById('add-block').classList.add('hidden');
             }
 
-            // Наблюдателям блокируем и убираем кнопку сохранения изменений
+            // Если зашел гость ('viewer') — полностью убираем с экрана кнопку сохранения изменений
             if (role === 'viewer') {
                 document.getElementById('save-btn').style.display = 'none';
             } else {
@@ -186,11 +219,13 @@
             }
         }
 
+        // ТУТ ИСПРАВЛЕНО ИМЯ КНОПКИ: Нажатие на кнопку «Выйти»
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = window.location.origin;
+            localStorage.clear(); // Очищаем память смартфона
+            window.location.href = window.location.origin; // Сбрасываем страницу к экрану входа
         });
 
+        // Функция переключения окон при просмотре карточки техники
         function openResultBlock() {
             document.getElementById('search-block').classList.add('hidden');
             document.getElementById('add-block').classList.add('hidden');
@@ -199,6 +234,7 @@
             document.getElementById('message').innerText = "Загрузка...";
         }
 
+        // Кнопка, по которой браузер телефона скачивает PDF-лист наклеек
         document.getElementById('print-all-btn').addEventListener('click', () => {
             window.location.href = `${API_URL}/equipment/pdf/print`;
         });
@@ -241,9 +277,7 @@
                         });
                     }
                 }
-            } catch (err) {
-                msgDiv.className = "status-msg error"; msgDiv.innerText = err.message;
-            }
+            } catch (err) { msgDiv.className = "status-msg error"; msgDiv.innerText = err.message; }
         }
 
         // ОТПРАВКА ИЗМЕНЕНИЙ СТАТУСА (PATCH С ПЕРЕДАЧЕЙ JWT ТОКЕНА)
@@ -298,14 +332,9 @@
         document.getElementById('back-btn').addEventListener('click', () => {
             document.getElementById('result-block').classList.add('hidden');
             document.getElementById('search-block').classList.remove('hidden');
-
             const role = localStorage.getItem('user_role');
-            if (role === 'admin') {
-                document.getElementById('add-block').classList.remove('hidden');
-            }
-
-            document.getElementById('test-id-input').value = "";
-            document.getElementById('message').innerText = "";
+            if (role === 'admin') document.getElementById('add-block').classList.remove('hidden');
+            document.getElementById('test-id-input').value = ""; document.getElementById('message').innerText = "";
         });
     </script>
 </body>
