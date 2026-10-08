@@ -5,100 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Учет АСУ ТП МЦ</title>
     <style>
-        /* Общие стили для страницы: центрируем контент, задаем современный шрифт */
+        /* Центрируем блоки на экране смартфона и убираем лишние отступы */
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; padding: 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
-
-        /* Главный заголовок системы учета */
         h2 { color: #1e293b; text-align: center; margin-bottom: 20px; font-size: 22px; }
 
-        /* Стили для белых карточек блоков (Авторизация, Поиск, Добавление) */
+        /* Стили для белых контейнеров-карточек модулей */
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; margin-bottom: 20px; }
-
-        /* Заголовки внутри карточек с разделительной линией */
         h3 { margin-top: 0; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-size: 16px; }
-
-        /* Текстовые метки для полей ввода */
         label { display: block; font-weight: 600; margin-top: 12px; color: #475569; font-size: 14px; }
 
-        /* Инпуты и выпадающие списки (оптимизированы под пальцы смартфона) */
+        /* Инпуты и выпадающие списки, оптимизированные под пальцы */
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-
-        /* Основной стиль кнопок */
         button { width: 100%; padding: 12px; background-color: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 16px; margin-top: 15px; cursor: pointer; }
         button:hover { background-color: #1d4ed8; }
 
-        /* ВАЖНЫЙ КЛАСС: Скрывает любой блок с экрана (управляется через JavaScript) */
+        /* КРИТИЧЕСКИЙ КЛАСС: Отвечает за мгновенное скрытие элементов с экрана */
         .hidden { display: none !important; }
-
-        /* Стили для статусных сообщений (Зеленый — успех, Красный — ошибка) */
         .status-msg { text-align: center; font-weight: 600; margin-top: 10px; font-size: 14px; }
         .success { color: #16a34a; }
         .error { color: #dc2626; }
 
-        /* Верхняя плашка профиля вошедшего сотрудника */
+        /* Верхняя статусная панель авторизованного сотрудника */
         .user-badge { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 15px; background: #e2e8f0; padding: 8px 12px; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-weight: 600; color: #334155; }
-
-        /* Компактная кнопка «Выйти» на верхней плашке */
         .logout-btn { background: #cbd5e1; color: #1e293b; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; margin: 0; width: auto; }
         .logout-btn:hover { background: #94a3b8; color: white; }
     </style>
 </head>
 <body>
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ (Изначально скрыта) -->
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ -->
     <div id="user-panel" class="user-badge hidden">
         <div>👤 <span id="current-username">Пользователь</span> (<span id="current-role" style="color:#2563eb;">Роль</span>)</div>
         <button type="button" class="logout-btn" id="logout-btn">Выйти</button>
     </div>
 
-    <h2>Учет оборудования АСУ ТП</h2>
+    <h2>Учет оборудования АСУ ТП МЦ</h2>
 
-    <!-- КАРТОЧКА АВТОРИЗАЦИИ (LOGIN SCREEN) - ТУТ ИСПРАВЛЕНА КАВЫЧКА ID -->
+    <!-- КАРТОЧКА АВТОРИЗАЦИИ (LOGIN SCREEN) -->
     <div class="card" id="login-block">
-        <h3>🔐 Вход в систему</h3>
+        <h3>🔐 Вход в систему Enterprise</h3>
         <label>Имя пользователя:</label>
-        <input type="text" id="login-username" placeholder="Например: engineer_roman">
+        <input type="text" id="login-username" placeholder="Например: engineer_ivan">
         <label>Пароль:</label>
         <input type="password" id="login-password" placeholder="••••••••">
         <button type="button" id="login-submit-btn" style="background-color: #2563eb;">Войти</button>
-        <!-- Сюда выводится ошибка, если пароль неверный -->
         <div id="login-message" class="status-msg"></div>
     </div>
 
-    <!-- КАРТОЧКА ПОИСКА И ПЕЧАТИ ОБОРУДОВАНИЯ (Скрыта до входа) -->
+    <!-- КАРТОЧКА ПОИСКА И ПЕЧАТИ ОБОРУДОВАНИЯ -->
     <div class="card hidden" id="search-block">
         <h3>Поиск техники</h3>
-        <input type="text" id="test-id-input" placeholder="Вставьте UUID">
+        <input type="text" id="test-id-input" placeholder="Вставьте Номенклатурный номер">
         <button type="button" id="test-btn" style="background-color: #10b981;">Проверить запись</button>
         <button type="button" id="print-all-btn" style="background-color: #64748b; margin-top: 10px;">🖨️ Скачать PDF с наклейками</button>
     </div>
 
-    <!-- КАРТОЧКА ДОБАВЛЕНИЯ НОВОЙ ТЕХНИКИ (Открывается СТРОГО для роли 'admin') -->
+    <!-- КАРТОЧКА ДОБАВЛЕНИЯ НОВОЙ ТЕХНИКИ -->
     <div class="card hidden" id="add-block">
-        <h3>➕ Добавить новую технику</h3>
-        <label>Название техники:</label>
-        <input type="text" id="new-name" placeholder="Например: Монитор Dell">
-        <label>Серийный номер:</label>
-        <input type="text" id="new-sn" placeholder="Например: SN-777">
-        <label>Локация:</label>
-        <input type="text" id="new-location" placeholder="Например: Кабинет 10">
+        <h3>➕ Добавить позицию ведомости</h3>
+        <label>Номенклатурный номер:</label>
+        <input type="text" id="new-id" placeholder="Например: 1067855">
+        <label>Название оборудования:</label>
+        <input type="text" id="new-name" placeholder="Например: Блок регулирования JT14">
+        <label>Первоначальная локация:</label>
+        <input type="text" id="new-location" placeholder="Например: Склад АСУ">
+        <label>Количество (Остаток):</label>
+        <input type="number" id="new-quantity" value="1" min="0">
         <label>Статус:</label>
         <select id="new-status">
             <option value="На складе">На складе</option>
             <option value="В работе">В работе</option>
         </select>
-        <button type="button" id="create-btn" style="background-color: #2563eb;">Создать в базе equipment</button>
+        <button type="button" id="create-btn" style="background-color: #2563eb;">Создать в базе AMVERA</button>
         <div id="add-message" class="status-msg"></div>
     </div>
 
-    <!-- КАРТОЧКА ПРОСМОТРА ИЗМЕНЕНИЙ И ЛЕНТЫ ИСТОРИИ (Скрыта до выполнения поиска) -->
+    <!-- КАРТОЧКА ПРОСМОТРА И ИЗМЕНЕНИЯ ПАРАМЕТРОВ -->
     <div class="card hidden" id="result-block">
-        <h3>ℹ️ Информация и Изменение статуса</h3>
-        <label>Название:</label>
-        <input type="text" id="eq-name" readonly style="background-color: #f1f5f9;">
-        <label>Серийный номер:</label>
-        <input type="text" id="eq-sn" readonly style="background-color: #f1f5f9;">
-        <label>Текущая локация:</label>
-        <input type="text" id="eq-location">
+        <h3>ℹ️ Информация и Изменение параметров</h3>
+
+        <label>Название оборудования:</label>
+        <input type="text" id="eq-name" readonly style="background-color: #f1f5f9; color: #475569; font-weight: 500;">
+        <label>Номенклатурный номер:</label>
+        <input type="text" id="eq-id" readonly style="background-color: #f1f5f9; color: #475569; font-weight: 500;">
+
+        <label>Количество (Остаток), шт.:</label>
+        <input type="number" id="eq-quantity" min="0">
+        <label>Текущая локация (Место установки):</label>
+        <input type="text" id="eq-location" placeholder="Укажите кабинет / цех">
         <label>Статус:</label>
         <select id="eq-status">
             <option value="На складе">На складе</option>
@@ -106,126 +99,117 @@
             <option value="В ремонте">В ремонте</option>
             <option value="Списано">Списано</option>
         </select>
+
         <button type="button" id="save-btn">Сохранить изменения</button>
 
-        <!-- ЛЕНТА ЛОГОВ (ИСТОРИЯ ПЕРЕМЕЩЕНИЙ ТЕХНИКИ) -->
-        <h4 style="margin-top:20px; margin-bottom:5px; color:#475569; font-size: 14px;">📋 История перемещений:</h4>
+        <h4 style="margin-top:20px; margin-bottom:5px; color:#475569; font-size: 14px;">📋 История перемещений и остатков:</h4>
         <div id="history-container" style="background:#f1f5f9; padding:10px; border-radius:8px; max-height:120px; overflow-y:auto; font-size:13px; color:#334155; border:1px solid #e2e8f0;"></div>
 
         <button type="button" id="back-btn" style="background-color: #64748b; margin-top:15px;">Назад к поиску</button>
         <div id="message" class="status-msg"></div>
     </div>
-    <script>
-        // Переменная определяет домен бэкенда динамически (избавляет от ручного ввода IP)
-        const API_URL = window.location.origin;
-        let currentEquipmentId = null;
 
-        // ENTERPRISE-АВТОЛОГИН: Срабатывает мгновенно при открытии страницы/вкладки
+    <!-- ФИНАЛЬНЫЙ КОПИРАЙТ ВНИЗУ ИНТЕРФЕЙСА -->
+    <div style="margin-top: 10px; margin-bottom: 20px; font-size: 12px; color: #94a3b8; font-weight: 600; text-align: center; letter-spacing: 0.5px;">
+        © Земляков С.В., 2026
+    </div>
+    <script>
+        // Глобальная переменная для автоматического определения текущего домена бэкенда Amvera
+        const API_URL = window.location.origin;
+        let currentEquipmentId = null; // Переменная для хранения открытого номенклатурного номера
+
+        // ENTERPRISE АВТОЛОГИН: Срабатывает в первую миллисекунду загрузки страницы на телефоне
         window.addEventListener('DOMContentLoaded', async () => {
-            // Читаем пропуск (токен) и роль сотрудника из постоянной памяти браузера телефона
+            // Заглядываем в постоянную память смартфона на наличие выданных ранее пропусков
             const token = localStorage.getItem('access_token');
             const role = localStorage.getItem('user_role');
             const username = localStorage.getItem('username');
 
-            // Проверяем, перешел ли инженер по ссылке из QR-кода (ищем ?id=... в веб-адресе)
+            // Перехватываем номенклатурный номер, если переход осуществлен по QR-коду (?id=...)
             const urlParams = new URLSearchParams(window.location.search);
             const qrId = urlParams.get('id');
 
-            // ЕСЛИ СОТРУДНИК УЖЕ ВХОДИЛ РАНЕЕ:
             if (token && role && username) {
-                showAppInterface(username, role); // Включаем склад и ГАРАНТИРОВАННО прячем логин
+                // ЕСЛИ ТОКЕН НАЙДЕН: Сразу открываем рабочий стол, а форму ввода пароля ПРЯЧЕМ
+                showAppInterface(username, role);
 
-                // Если мы попали сюда из QR-кода — сразу переключаем экраны и качаем карточку прибора
+                // Если считали QR-код — мгновенно разворачиваем карточку этой позиции ведомости
                 if (qrId) {
                     currentEquipmentId = qrId;
                     openResultBlock();
                     await loadEquipmentData(currentEquipmentId);
                 }
             } else {
-                // ЕСЛИ ТОКЕНА НЕТ (Первый вход): Принудительно выводим на экран форму логина
+                // ЕСЛИ ТОКЕНА НЕТ (Первый вход): Оставляем на экране телефона только строгое окно логина
                 document.getElementById('login-block').classList.remove('hidden');
-                if (qrId) { currentEquipmentId = qrId; } // Запоминаем ID, чтобы открыть его сразу ПОСЛЕ ручного входа
+                if (qrId) { currentEquipmentId = qrId; } // Запоминаем код до ввода пароля
             }
         });
 
-        // ОБРАБОТЧИК НАЖАТИЯ КНОПКИ «ВОЙТИ» (Если автологин не сработал)
+        // ОБРАБОТЧИК НАЖАТИЯ КНОПКИ «ВОЙТИ» (Ручной ввод учетных данных сотрудника)
         document.getElementById('login-submit-btn').addEventListener('click', async () => {
             const userVal = document.getElementById('login-username').value.trim();
             const passVal = document.getElementById('login-password').value.trim();
             const loginMsg = document.getElementById('login-message');
 
-            if (!userVal || !passVal) {
-                loginMsg.className = "status-msg error"; loginMsg.innerText = "Введите имя и пароль!"; return;
-            }
+            if (!userVal || !passVal) { loginMsg.className = "status-msg error"; loginMsg.innerText = "Введите имя и пароль!"; return; }
             loginMsg.className = "status-msg"; loginMsg.innerText = "Проверка безопасности...";
 
             try {
-                // Отправляем логин/пароль на бэкенд Amvera
+                // Отправляем POST-запрос с логином и паролем на сервер FastAPI
                 const response = await fetch(`${API_URL}/equipment/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: userVal, password: passVal })
                 });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.detail || 'Ошибка авторизации');
-                }
-
+                if (!response.ok) { const errData = await response.json(); throw new Error(errData.detail || 'Ошибка авторизации'); }
                 const data = await response.json();
 
-                // Сохраняем выданный токен и роль в localStorage (постоянную память)
+                // ВАЖНО: Фиксируем выданные сервером ключи в ПОСТОЯННУЮ память localStorage
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('user_role', data.role);
                 localStorage.setItem('username', data.username);
 
-                // Запускаем переключение интерфейса склада
+                // Запускаем переключение окон интерфейса склада
                 showAppInterface(data.username, data.role);
 
+                // Если вход выполнен в момент сканирования — сразу подгружаем нужную плату/прибор
                 if (currentEquipmentId) {
                     openResultBlock();
                     await loadEquipmentData(currentEquipmentId);
                 }
-            } catch (err) {
-                loginMsg.className = "status-msg error"; loginMsg.innerText = err.message;
-            }
+            } catch (err) { loginMsg.className = "status-msg error"; loginMsg.innerText = err.message; }
         });
 
-        // ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ РОЛЕЙ И СКРЫТИЯ ОКНА ВХОДА
+        // ФУНКЦИЯ ДИНАМИЧЕСКОГО СОВМЕЩЕНИЯ ИНТЕРФЕЙСА ПО РОЛЯМ (RBAC)
         function showAppInterface(username, role) {
-            // Намертво прячем форму входа с полями ввода логина и пароля!
+            // ЖЕЛЕЗОБЕТОННОЕ ПРАВИЛО: Принудительно прячем блок логина (Устраняет баг наложения окон!)
             document.getElementById('login-block').classList.add('hidden');
 
-            // Показываем верхнюю плашку с именем авторизованного сотрудника
+            // Включаем верхнюю серую статус-плашку сотрудника
             document.getElementById('user-panel').classList.remove('hidden');
             document.getElementById('current-username').innerText = username;
             document.getElementById('current-role').innerText = role === 'admin' ? 'Администратор' : (role === 'engineer' ? 'Инженер' : 'Наблюдатель');
 
-            // Открываем блок ручного поиска техники
+            // Показываем стандартный блок ручного поиска по коду
             document.getElementById('search-block').classList.remove('hidden');
 
-            // Показываем блок создания новой техники ТОЛЬКО для роли 'admin'
-            if (role === 'admin') {
-                document.getElementById('add-block').classList.remove('hidden');
-            } else {
-                document.getElementById('add-block').classList.add('hidden');
-            }
+            // Если вошел Администратор — открываем форму добавления. Для инженеров она намертво вырезается
+            if (role === 'admin') document.getElementById('add-block').classList.remove('hidden');
+            else document.getElementById('add-block').classList.add('hidden');
 
-            // Если зашел гость ('viewer') — полностью убираем с экрана кнопку сохранения изменений
-            if (role === 'viewer') {
-                document.getElementById('save-btn').style.display = 'none';
-            } else {
-                document.getElementById('save-btn').style.display = 'block';
-            }
+            // Если зашел гость/наблюдатель ('viewer') — полностью скрываем кнопку сохранения изменений
+            if (role === 'viewer') document.getElementById('save-btn').style.display = 'none';
+            else document.getElementById('save-btn').style.display = 'block';
         }
 
-        // ТУТ ИСПРАВЛЕНО ИМЯ КНОПКИ: Нажатие на кнопку «Выйти»
+        // КНОПКА ВЫХОДА ИЗ СИСТЕМЫ (Полная деавторизация телефона)
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.clear(); // Очищаем память смартфона
-            window.location.href = window.location.origin; // Сбрасываем страницу к экрану входа
+            localStorage.clear(); // Полностью вычищаем все пропуска из памяти браузера
+            window.location.href = window.location.origin; // Возвращаем чистую страницу к экрану входа
         });
 
-        // Функция переключения окон при просмотре карточки техники
+        // Функция скрытия поиска и добавления при разворачивании карточки
         function openResultBlock() {
             document.getElementById('search-block').classList.add('hidden');
             document.getElementById('add-block').classList.add('hidden');
@@ -234,106 +218,119 @@
             document.getElementById('message').innerText = "Загрузка...";
         }
 
-        // Кнопка, по которой браузер телефона скачивает PDF-лист наклеек
+        // Обработчик скачивания А4-листа наклеек с кодами ведомости из памяти RAM
         document.getElementById('print-all-btn').addEventListener('click', () => {
             window.location.href = `${API_URL}/equipment/pdf/print`;
         });
+        // Обработчик кнопки ручной проверки номенклатурного номера устройства
         document.getElementById('test-btn').addEventListener('click', async () => {
             const testId = document.getElementById('test-id-input').value.trim();
-            if (!testId) { alert('Пожалуйста, вставьте UUID!'); return; }
+            if (!testId) { alert('Пожалуйста, вставьте Номенклатурный номер!'); return; }
             currentEquipmentId = testId;
             openResultBlock();
             await loadEquipmentData(currentEquipmentId);
         });
 
-        // ПОДГРУЗКА ДАННЫХ И ЛЕНТЫ ИСТОРИИ (С ПЕРЕДАЧЕЙ JWT ТОКЕНА)
+        // СКАЧИВАНИЕ ДАННЫХ ИЗ POSTGRESQL (С ПРИНУДИТЕЛЬНОЙ ПЕРЕДАЧЕЙ JWT-ТОКЕНА)
         async function loadEquipmentData(id) {
             const msgDiv = document.getElementById('message');
-            const token = localStorage.getItem('access_token');
+            const token = localStorage.getItem('access_token'); // Извлекаем наш пропуск
             try {
-                const response = await fetch(`${API_URL}/equipment/${id}?token=${token}`);
-                if (!response.ok) throw new Error('Оборудование не найдено или токен истек');
+                // ЗАПРОС 1: Получаем текстовые информационные и числовые поля (encodeURIComponent защищает от спецсимволов)
+                const response = await fetch(`${API_URL}/equipment/${encodeURIComponent(id)}?token=${token}`);
+                if (!response.ok) throw new Error('Позиция не найдена в ведомости остатков МЦ');
                 const data = await response.json();
+
+                // Заполняем поля формы на экране iPhone
                 document.getElementById('eq-name').value = data.name || "—";
-                document.getElementById('eq-sn').value = data.serial_number || "—";
+                document.getElementById('eq-id').value = data.id || "—";
+                document.getElementById('eq-quantity').value = data.quantity !== undefined ? data.quantity : 0;
                 document.getElementById('eq-location').value = data.location || "";
                 document.getElementById('eq-status').value = data.status || "На складе";
                 msgDiv.innerText = "";
 
-                // Запрос логов перемещений
-                const histResponse = await fetch(`${API_URL}/equipment/${id}/history?token=${token}`);
+                // ЗАПРОС 2: Скачиваем ленту логов истории изменений остатков и локаций для этой позиции
+                const histResponse = await fetch(`${API_URL}/equipment/${encodeURIComponent(id)}/history?token=${token}`);
                 const container = document.getElementById('history-container');
-                container.innerHTML = "";
+                container.innerHTML = ""; // Очищаем от старых данных прошлой проверки
+
                 if (histResponse.ok) {
                     const logs = await histResponse.json();
-                    if (logs.length === 0) container.innerHTML = "<div style='color:#94a3b8;'>История пуста</div>";
+                    if (logs.length === 0) container.innerHTML = "<div style='color:#94a3b8;'>История изменений пуста</div>";
                     else {
+                        // В цикле формируем аккуратные строчки с фиксацией штук и мест установки компонента
                         logs.forEach(log => {
                             const date = new Date(log.changed_at).toLocaleString('ru-RU', {timeZone: 'UTC'});
                             const item = document.createElement('div');
                             item.style.marginBottom = "5px"; item.style.borderBottom = "1px dashed #cbd5e1"; item.style.paddingBottom = "3px";
-                            item.innerHTML = `⏰ <b>${date}</b><br>📍 ${log.location || 'Не указана'} — <span style="color:#2563eb; font-weight:600;">${log.status}</span>`;
-                            container.appendChild(item);
+                            item.innerHTML = `⏰ <b>${date}</b><br>📍 Лок: ${log.location || 'Не указана'} | Статус: <b>${log.status}</b><br>📦 Остаток: <b>${log.quantity !== undefined ? log.quantity : 0} шт.</b>`;
+                            container.appendChild(item); // Выводим на экран телефона
                         });
                     }
                 }
             } catch (err) { msgDiv.className = "status-msg error"; msgDiv.innerText = err.message; }
         }
 
-        // ОТПРАВКА ИЗМЕНЕНИЙ СТАТУСА (PATCH С ПЕРЕДАЧЕЙ JWT ТОКЕНА)
+        // КНОПКА СОХРАНЕНИЯ С КОРРЕКТИРОВКОЙ ИЗМЕНЯЕМЫХ ПАРАМЕТРОВ (PATCH-ЗАПРОС С КОЛИЧЕСТВОМ)
         document.getElementById('save-btn').addEventListener('click', async () => {
             const status = document.getElementById('eq-status').value;
             const location = document.getElementById('eq-location').value;
+            const quantity = parseInt(document.getElementById('eq-quantity').value) || 0; // Превращаем введенный текст в число
             const msgDiv = document.getElementById('message');
             const token = localStorage.getItem('access_token');
             msgDiv.className = "status-msg"; msgDiv.innerText = "Сохранение...";
 
             try {
-                const response = await fetch(`${API_URL}/equipment/${currentEquipmentId}?token=${token}`, {
+                const response = await fetch(`${API_URL}/equipment/${encodeURIComponent(currentEquipmentId)}?token=${token}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: status, location: location })
+                    body: JSON.stringify({ status: status, location: location, quantity: quantity }) // Отправляем пакет изменений на сервер
                 });
-                if (!response.ok) throw new Error('Не удалось обновить данные (нет прав)');
-                msgDiv.className = "status-msg success"; msgDiv.innerText = "Данные обновлены в Amvera!";
+                if (!response.ok) throw new Error('Не удалось обновить данные ведомости остатков');
+                msgDiv.className = "status-msg success"; msgDiv.innerText = "Данные ведомости успешно обновлены!";
+
+                // Перерисовываем карточку, чтобы лента истории и остаток вверху мгновенно обновились
                 await loadEquipmentData(currentEquipmentId);
-            } catch (err) {
-                msgDiv.className = "status-msg error"; msgDiv.innerText = err.message;
-            }
+            } catch (err) { msgDiv.className = "status-msg error"; msgDiv.innerText = err.message; }
         });
 
-        // ДОБАВЛЕНИЕ НОВОЙ ТЕХНИКИ (POST С ПЕРЕДАЧЕЙ JWT ТОКЕНА)
+        // КНОПКА СОЗДАНИЯ НОВОЙ ПОЗИЦИИ ВЕДОМОСТИ АДМИНИСТРАТОРОМ (POST-ЗАПРОС)
         document.getElementById('create-btn').addEventListener('click', async () => {
+            const id = document.getElementById('new-id').value.trim();
             const name = document.getElementById('new-name').value.trim();
-            const sn = document.getElementById('new-sn').value.trim();
             const location = document.getElementById('new-location').value.trim();
+            const quantity = parseInt(document.getElementById('new-quantity').value) || 0;
             const status = document.getElementById('new-status').value;
             const addMsg = document.getElementById('add-message');
             const token = localStorage.getItem('access_token');
 
-            if (!name || !sn) { addMsg.className = "status-msg error"; addMsg.innerText = "Заполните Название и С/Н!"; return; }
+            if (!id || !name) { addMsg.className = "status-msg error"; addMsg.innerText = "Заполните Номенклатурный номер и Название!"; return; }
             addMsg.className = "status-msg"; addMsg.innerText = "Создание записи...";
 
             try {
                 const response = await fetch(`${API_URL}/equipment?token=${token}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name, serial_number: sn, location: location, status: status })
+                    body: JSON.stringify({ id: id, name: name, location: location, quantity: quantity, status: status })
                 });
-                if (!response.ok) throw new Error('Ошибка при создании (недостаточно прав)');
+                if (!response.ok) { const errData = await response.json(); throw new Error(errData.detail || 'Ошибка при создании'); }
                 const item = await response.json();
-                addMsg.className = "status-msg success"; addMsg.innerText = `Успешно создано! UUID: ${item.id}`;
-                document.getElementById('new-name').value = ""; document.getElementById('new-sn').value = ""; document.getElementById('new-location').value = "";
-            } catch (err) {
-                addMsg.className = "status-msg error"; addMsg.innerText = err.message;
-            }
+                addMsg.className = "status-msg success"; addMsg.innerText = `Успешно внесено! Номер: ${item.id}`;
+
+                // Вычищаем поля формы для быстрого ввода следующей детали ведомости
+                document.getElementById('new-id').value = ""; document.getElementById('new-name').value = ""; document.getElementById('new-location').value = ""; document.getElementById('new-quantity').value = "1";
+            } catch (err) { addMsg.className = "status-msg error"; addMsg.innerText = err.message; }
         });
 
+        // КНОПКА ВОЗВРАТА: Закрытие карточки результата и переход к общему поиску складов
         document.getElementById('back-btn').addEventListener('click', () => {
             document.getElementById('result-block').classList.add('hidden');
             document.getElementById('search-block').classList.remove('hidden');
+
+            // Если вошел Администратор — возвращаем ему на экран форму добавления
             const role = localStorage.getItem('user_role');
             if (role === 'admin') document.getElementById('add-block').classList.remove('hidden');
+
             document.getElementById('test-id-input').value = ""; document.getElementById('message').innerText = "";
         });
     </script>
